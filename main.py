@@ -13,6 +13,7 @@ enable_cover = True  # 是否启用封面获取
 debug_mode = False  # 是否输出所有窗口标题
 txt_file = "F:\\Program Files\\Netmusic\\song.txt"  # OBS 读取的文件路径
 cover_file = "F:\\Program Files\\Netmusic\\cover.jpg"  # 封面图片路径
+custom_prefix = "当前播放"  # 可自定义前缀，OBS参数可调整
 
 # 1. 获取网易云音乐窗口标题，并支持 debug 模式输出所有窗口标题
 def get_netease_music_title():
@@ -71,34 +72,32 @@ def download_cover(cover_url, file_name=cover_file):
 # 5. 保存数据到 OBS 读取的文件
 def save_to_file(song_info, cover_url):
     with open(txt_file, "w", encoding="utf-8") as f:
-        f.write(f"当前播放：{song_info}")
-    
+        f.write(f"{custom_prefix}：{song_info}")
     if cover_url:
         download_cover(cover_url)
 
 # 6. 让 OBS 生成可调参数
 def script_properties():
     props = obs.obs_properties_create()
-
+    obs.obs_properties_add_text(props, "custom_prefix", "歌曲信息前缀", obs.OBS_TEXT_DEFAULT)
     obs.obs_properties_add_int(props, "refresh_rate", "刷新间隔（秒）", 1, 10, 1)
     obs.obs_properties_add_bool(props, "enable_cover", "启用封面获取")
     obs.obs_properties_add_bool(props, "debug_mode", "开启 Debug 模式（显示所有窗口标题）")
     obs.obs_properties_add_path(props, "txt_file", "文件路径", obs.OBS_PATH_FILE, "*.txt;*.log;*", None)
     obs.obs_properties_add_path(props, "cover_file", "封面路径", obs.OBS_PATH_FILE, "*.jpg;*.png;*", None)
-    
     return props
 
-# 7. 让 OBS 读取参数
 def script_update(settings):
-    global refresh_rate, enable_cover, debug_mode, txt_file, cover_file
+    global refresh_rate, enable_cover, debug_mode, txt_file, cover_file, custom_prefix
     refresh_rate = obs.obs_data_get_int(settings, "refresh_rate")
     enable_cover = obs.obs_data_get_bool(settings, "enable_cover")
     debug_mode = obs.obs_data_get_bool(settings, "debug_mode")
     txt_file = obs.obs_data_get_string(settings, "txt_file")
     cover_file = obs.obs_data_get_string(settings, "cover_file")
+    custom_prefix = obs.obs_data_get_string(settings, "custom_prefix") or "当前播放"
 
     print(f"当前设置: 刷新间隔={refresh_rate}, 封面获取={enable_cover}, Debug模式={debug_mode}")
-    print(f"文件路径={txt_file}, 封面路径={cover_file}")
+    print(f"文件路径={txt_file}, 封面路径={cover_file}, 歌曲前缀={custom_prefix}")
 
 # 8. 自动更新 OBS 信息
 def main_loop():
