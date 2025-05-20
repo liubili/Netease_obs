@@ -99,15 +99,20 @@ def script_update(settings):
     print(f"当前设置: 刷新间隔={refresh_rate}, 封面获取={enable_cover}, Debug模式={debug_mode}")
     print(f"文件路径={txt_file}, 封面路径={cover_file}, 歌曲前缀={custom_prefix}")
 
+last_song_info = None  # 记录上一次的歌曲信息
+
 # 8. 自动更新 OBS 信息
 def main_loop():
+    global last_song_info
     title = get_netease_music_title()
     if title:
         song_info = extract_song_info(title)
         cover_url = get_song_cover(song_info) if enable_cover else None
         save_to_file(song_info, cover_url)
-        print(f"更新成功: {song_info}")
-    else:
-        print("未检测到网易云音乐窗口")
+        if song_info != last_song_info:
+            now = time.strftime("%H:%M")
+            print(f"[{now}] 更新成功: {song_info}")
+            last_song_info = song_info
+    # 不输出与上次相同的内容
 
 obs.timer_add(main_loop, refresh_rate * 1000)
