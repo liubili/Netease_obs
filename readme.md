@@ -13,7 +13,8 @@
 
 ## 效果预览
 
-https://bbs.liubiligrass.com/assets/files/2025-07-19/1752908527-351335-image.png
+<img width="1784" height="823" alt="1752908527-351335-image" src="https://github.com/user-attachments/assets/c2a8eb1c-d8a6-4f5b-972a-b12ac350c201" />
+
 
 ## 版本偏移链适配
 
