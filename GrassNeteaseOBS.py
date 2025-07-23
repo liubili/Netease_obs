@@ -11,7 +11,8 @@ import win32gui
 import win32process
 from pymem import Pymem
 from pymem.process import module_from_name
-
+import threading
+from concurrent.futures import ThreadPoolExecutor
 """
 网易云音乐OBS插件 - 实时显示当前播放歌曲信息
 
@@ -44,6 +45,10 @@ from pymem.process import module_from_name
 
 作者: liubiliGrass
 """
+
+# ===================== 线程池 & 函数定义 ========================
+# 用于执行耗时的搜索、歌词与封面下载
+executor = ThreadPoolExecutor(max_workers=3)
 
 # ======================== 配置项 ========================
 refresh_interval = 1000  # 刷新间隔（毫秒）
@@ -82,7 +87,6 @@ base = mod.lpBaseOfDll
 # ===================== 函数定义 ========================
 
 def get_window_title():
-
     def callback(hwnd, titles):
         if win32gui.IsWindowVisible(hwnd):
             _, pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -98,30 +102,37 @@ def extract_song_info(title):
         parts = title.split(" - ")
         return parts[0].strip(), parts[1].strip()
     return title.strip(), ""
+def split_artists(artist_field: str) -> list[str]:
+    # 支持 “/”、“&”、“，” 等分隔
+    import re
+    parts = re.split(r'[\/&,、]+', artist_field)
+    return [p.strip() for p in parts if p.strip()]
 
 def search_song(song_name, artist):
     global song_id_cache, cover_url_cache
+    artist_list = split_artists(artist)
     url = f"https://music.163.com/api/search/get"
     params = {
         's': song_name,
         'type': 1,
-        'limit': 5,
+        'limit': 10,
+        # 保留五个
         'offset': 0
     }
     headers = {'User-Agent': 'Mozilla/5.0'}
     try:
-        response = requests.post(url, data=params, headers=headers)
+        response = requests.post(url, data=params, headers=headers , timeout=2)
         results = response.json()['result']['songs']
         obs.script_log(obs.LOG_INFO, f"搜索到 {len(results)} 首歌曲")
         # obs.script_log(obs.LOG_INFO, f"完整 JSON 数据:\n{json.dumps(response.json(), ensure_ascii=False, indent=2)}")
-
-
+        obs.script_log(obs.LOG_WARNING, f"[匹配提示] 歌曲名: {song_name}, 歌手: {artist}")
         for song in results:
-            
-            if any(artist in a['name'] for a in song['artists']):
+        # 只要候选歌手列表里任意一位匹配即可
+            if any(a['name'] in artist_list or any(sub in a['name'] for sub in artist_list)
+               for a in song['artists']):
                 song_id_cache = song['id']
                 
-                
+                obs.script_log(obs.LOG_INFO, f"找到匹配的歌曲: {song['name']} - {song['artists'][0]['name']}")
                 return song_id_cache
         song_id_cache = results[0]['id']
         
@@ -137,7 +148,7 @@ def get_lyrics(song_id):
     try:
         url = f"https://music.163.com/api/song/lyric?id={song_id}&lv=1&kv=1&tv=1"
         headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=2)
         data = response.json()
         # obs.script_log(obs.LOG_INFO, f"歌词接口返回:\n{json.dumps(data, ensure_ascii=False, indent=2)}")
         main = parse_lyric(data.get("lrc", {}).get("lyric", ""))
@@ -238,7 +249,7 @@ def download_cover():
     if not cover_url_cache:
         return
     try:
-        data = requests.get(cover_url_cache).content
+        data = requests.get(cover_url_cache, timeout=2).content
         with open(cover_path, 'wb') as f:
             f.write(data)
         cover_downloaded = True
@@ -253,13 +264,10 @@ def update():
     song, artist = extract_song_info(title)
     if song != last_song:
         last_song = song
-        song_id = search_song(song, artist)
-        if song_id:
-            get_lyrics(song_id)
-            cover_downloaded = False
-            if enable_cover:
-                download_cover()
+        # 立即写入文本，避免等待网络
         write_file(song_title_path, f"{song} - {artist}")
+        # 在后台执行：搜索 → 获取歌词 → 下载封面
+        executor.submit(_background_fetch, song, artist)
 
     if enable_lyrics and lyric_data:
         now = get_progress()
@@ -317,3 +325,24 @@ def script_update(settings):
 
 def script_unload():
     obs.timer_remove(update)
+
+def _background_fetch(song, artist):
+    """
+    后台线程执行：
+    1) search_song
+    2) get_lyrics
+    3) download_cover
+    """
+    global song_id_cache, cover_url_cache, lyric_data, cover_downloaded
+
+    song_id = search_song(song, artist)
+    if not song_id:
+        return
+
+    # 拉取歌词（网络 I/O）
+    get_lyrics(song_id)
+
+    # 下载封面（可选网络 I/O）
+    if enable_cover:
+        cover_downloaded = False
+        download_cover()
