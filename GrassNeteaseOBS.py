@@ -87,6 +87,7 @@ base = mod.lpBaseOfDll
 # ===================== 函数定义 ========================
 
 def get_window_title():
+
     def callback(hwnd, titles):
         if win32gui.IsWindowVisible(hwnd):
             _, pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -212,13 +213,13 @@ def get_progress():
             return -1
 
         # 打印每个字节
-        for i, b in enumerate(data):
+        # for i, b in enumerate(data):
             # print(f"[+] byte[{i}] = 0x{b:02X}")
 
         # 小端解析为 uint64
-            val = struct.unpack("<Q", data)[0]
+        val = struct.unpack("<Q", data)[0]
         # print(f"[+] 最终值 = 0x{val:X} ({val})")
-            val += subtitle_offset_ms  # 应用字幕偏移
+        val += subtitle_offset_ms  # 应用字幕偏移
 
         # obs.script_log(obs.LOG_INFO, f"进度接口返回: {val} ms")
         return val
