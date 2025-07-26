@@ -73,6 +73,13 @@ lyric_data = None
 cover_url_cache = None
 cover_downloaded = False
 
+progress_cache = -1
+
+last_title = ""
+last_title_time = 0
+
+
+
 PROCESS_NAME = "cloudmusic.exe"
 MODULE_NAME = "cloudmusic.dll"
 #OFFSET_CHAIN = [0x01C6D230, 0xB8] 
@@ -97,6 +104,14 @@ def get_window_title():
     titles = []
     win32gui.EnumWindows(callback, titles)
     return titles[0] if titles else ""
+
+def get_window_title_cached():
+    global last_title, last_title_time
+    if time.time() - last_title_time > 1:
+        last_title = get_window_title()
+        last_title_time = time.time()
+    return last_title
+
 
 def extract_song_info(title):
     if " - " in title:
@@ -191,7 +206,7 @@ def resolve_pointer_chain(pm, base, offsets):
         addr = struct.unpack("<Q", raw)[0]
     except Exception as e:
         print(f"✖ 无法读取指针地址 0x{addr:X}: {e}")
-        sys.exit(1)
+        return -1
 
     for off in offsets[1:]:
         addr += off
@@ -227,6 +242,12 @@ def get_progress():
         pass
     return -1
 
+def update_progress_cache():
+    global progress_cache
+    result = get_progress()
+    if result >= 0:
+        progress_cache = result
+
 
 
 def module_base_address(pid, module_name):
@@ -238,12 +259,24 @@ def module_base_address(pid, module_name):
     except:
         return None
 
-def write_file(path, content):
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(content)
-    except:
-        pass
+# 避免重复写入
+last_written = {
+    "song": "",
+    "lyric": "",
+    "progress": ""
+}
+
+# ✅ 新写法：避免重复写入
+def write_file(path, content, key):
+    global last_written
+    if last_written.get(key) != content:
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content)
+            last_written[key] = content
+        except:
+            pass
+        
 
 def download_cover():
     global cover_downloaded
@@ -261,26 +294,33 @@ def download_cover():
 
 def update():
     global last_song, lyric_data, cover_downloaded
-    title = get_window_title()
+    title = get_window_title_cached()
     song, artist = extract_song_info(title)
     if song != last_song:
         last_song = song
         # 立即写入文本，避免等待网络
-        write_file(song_title_path, f"{song} - {artist}")
+        write_file(song_title_path, f"{song} - {artist}", "song")
+        write_file(lyric_path, "", "lyric")
+        lyric_data = {}  # 同时清空内存中的歌词缓存
         # 在后台执行：搜索 → 获取歌词 → 下载封面
         executor.submit(_background_fetch, song, artist)
 
     if enable_lyrics and lyric_data:
-        now = get_progress()
+        now = progress_cache
+
         # obs.script_log(obs.LOG_INFO, f"当前进度: {now} ms")
         closest = max((t for t in lyric_data if t <= now), default=None)
         line = lyric_data.get(closest, "") if closest else ""
-        write_file(lyric_path, line)
+        write_file(lyric_path, line, "lyric")
+
 
     if enable_progress:
-        now = get_progress()
+        now = progress_cache
+
         formatted = format_time(now) if progress_format == "mm:ss" else f"{now} ms"
-        write_file(progress_path, formatted)
+        write_file(progress_path, formatted, "progress")
+
+
 
 def format_time(ms):
     sec = ms // 1000
@@ -323,6 +363,8 @@ def script_update(settings):
 
     obs.timer_remove(update)
     obs.timer_add(update, refresh_interval)
+    obs.timer_add(lambda: executor.submit(update_progress_cache), refresh_interval)
+
 
 def script_unload():
     obs.timer_remove(update)
