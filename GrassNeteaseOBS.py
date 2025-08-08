@@ -83,7 +83,8 @@ last_title_time = 0
 PROCESS_NAME = "cloudmusic.exe"
 MODULE_NAME = "cloudmusic.dll"
 #OFFSET_CHAIN = [0x01C6D230, 0xB8] 
-OFFSET_CHAIN = [0x01C713B0, 0xB8]  # 根据实际情况调整偏移链
+#OFFSET_CHAIN = [0x01C713B0, 0xB8]  # 根据实际情况调整偏移链
+OFFSET_CHAIN = [0x01C713B0,0xB8] # 根据实际情况调整偏移链
 try:
     pm = Pymem(PROCESS_NAME)
     mod = module_from_name(pm.process_handle, MODULE_NAME)
@@ -218,13 +219,13 @@ def get_progress():
         # 解析偏移链
         target_addr = resolve_pointer_chain(pm, base, OFFSET_CHAIN)
         # print(f"[+] 解析后的目标地址 = 0x{target_addr:X}")
-
+        
         # 读取目标地址的 8 字节内容
         try:
             data = pm.read_bytes(target_addr, 8)
         except Exception as e:
             # print(f"✖ 读取地址 0x{target_addr:X} 失败: {e}")
-            obs.log(obs.LOG_ERROR, f"读取地址 0x{target_addr:X} 失败: {e}")
+            obs.script_log(obs.LOG_ERROR, f"读取地址 0x{target_addr:X} 失败: {e}")
             return -1
 
         # 打印每个字节
@@ -234,8 +235,8 @@ def get_progress():
         # 小端解析为 uint64
         val = struct.unpack("<Q", data)[0]
         # print(f"[+] 最终值 = 0x{val:X} ({val})")
-        val += subtitle_offset_ms  # 应用字幕偏移
-
+        # val += subtitle_offset_ms  # 应用字幕偏移
+        # obs.script_log(obs.LOG_INFO, f"当前偏移:{subtitle_offset_ms}")
         # obs.script_log(obs.LOG_INFO, f"进度接口返回: {val} ms")
         return val
     except:
@@ -306,7 +307,8 @@ def update():
         executor.submit(_background_fetch, song, artist)
 
     if enable_lyrics and lyric_data:
-        now = progress_cache
+        now = progress_cache + subtitle_offset_ms
+        # 应用字幕偏移量
 
         # obs.script_log(obs.LOG_INFO, f"当前进度: {now} ms")
         closest = max((t for t in lyric_data if t <= now), default=None)
@@ -347,7 +349,7 @@ def script_properties():
 def script_update(settings):
     global song_title_path, progress_path, lyric_path, cover_path
     global enable_lyrics, enable_translation, enable_progress, enable_cover
-    global refresh_interval, progress_format
+    global refresh_interval, progress_format , subtitle_offset_ms
 
     song_title_path = obs.obs_data_get_string(settings, "song_title_path")
     progress_path = obs.obs_data_get_string(settings, "progress_path")
