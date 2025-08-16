@@ -66,6 +66,7 @@ subtitle_offset_ms = 0  # 字幕偏移时间（毫秒），正值为延后，负
 
 progress_format = "mm:ss"  # 支持 mm:ss 或 percent
 
+debug = True  # 是否启用调试日志
 # ===================== 内部变量 ========================
 last_song = ""
 song_id_cache = None
@@ -140,21 +141,21 @@ def search_song(song_name, artist):
     try:
         response = requests.post(url, data=params, headers=headers , timeout=2)
         results = response.json()['result']['songs']
-        obs.script_log(obs.LOG_INFO, f"搜索到 {len(results)} 首歌曲")
+        script_log(obs.LOG_INFO, f"搜索到 {len(results)} 首歌曲")
         # obs.script_log(obs.LOG_INFO, f"完整 JSON 数据:\n{json.dumps(response.json(), ensure_ascii=False, indent=2)}")
-        obs.script_log(obs.LOG_WARNING, f"[匹配提示] 歌曲名: {song_name}, 歌手: {artist}")
+        script_log(obs.LOG_WARNING, f"[匹配提示] 歌曲名: {song_name}, 歌手: {artist}")
         for song in results:
         # 只要候选歌手列表里任意一位匹配即可
             if any(a['name'] in artist_list or any(sub in a['name'] for sub in artist_list)
                for a in song['artists']):
                 song_id_cache = song['id']
                 
-                obs.script_log(obs.LOG_INFO, f"找到匹配的歌曲: {song['name']} - {song['artists'][0]['name']}")
+                script_log(obs.LOG_INFO, f"找到匹配的歌曲: {song['name']} - {song['artists'][0]['name']}")
                 return song_id_cache
         song_id_cache = results[0]['id']
         
 
-        obs.script_log(obs.LOG_WARNING, f"[匹配提示] 未找到完全匹配的歌手，使用默认：{results[0]['name']}")
+        script_log(obs.LOG_WARNING, f"[匹配提示] 未找到完全匹配的歌手，使用默认：{results[0]['name']}")
         return song_id_cache
     except Exception as e:
         obs.script_log(obs.LOG_ERROR, f"搜索歌曲失败: {e}")
@@ -393,3 +394,10 @@ def _background_fetch(song, artist):
     if enable_cover:
         cover_downloaded = False
         download_cover()
+
+def script_log(level, message):
+    """
+    记录脚本日志
+    """
+    if debug:
+        obs.script_log(level, message)
