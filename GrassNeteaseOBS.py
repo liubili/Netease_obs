@@ -84,7 +84,7 @@ PROCESS_NAME = "cloudmusic.exe"
 MODULE_NAME = "cloudmusic.dll"
 #OFFSET_CHAIN = [0x01C6D230, 0xB8] 
 #OFFSET_CHAIN = [0x01C713B0, 0xB8]  # 根据实际情况调整偏移链
-OFFSET_CHAIN = [0x01C713B0,0xB8] # 根据实际情况调整偏移链
+OFFSET_CHAIN = [0x01C6EBD0,0xB8] # 3.1.16 204365 1a885061
 try:
     pm = Pymem(PROCESS_NAME)
     mod = module_from_name(pm.process_handle, MODULE_NAME)
@@ -198,6 +198,8 @@ def merge_lyrics(main, trans):
         if time in trans:
             merged[time] += " / " + trans[time]
     return merged
+
+#待办:单独摘出来
 
 def resolve_pointer_chain(pm, base, offsets):
     """解析多级偏移链，返回最终地址"""
