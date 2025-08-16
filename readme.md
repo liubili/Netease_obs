@@ -11,6 +11,13 @@
 - 🖼️ 下载当前歌曲封面图 (未完成)
 - 🪄 OBS 中通过文本源与图片源展示上述内容
 
+
+## 待办
+
+- [ ] 完成封面图下载功能
+- [ ] 拆分翻译歌词
+- [ ] 添加切换输出到文件/输出到歌词选项
+
 ## 效果预览
 
 <img width="1784" height="823" alt="1752908527-351335-image" src="https://github.com/user-attachments/assets/c2a8eb1c-d8a6-4f5b-972a-b12ac350c201" />
