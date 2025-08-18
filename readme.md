@@ -60,3 +60,7 @@ pip install pymem psutil requests pywin32
 使用 win32gui 获取网易云窗口标题从而解析出当前歌曲名与歌手名
 
 自动比对匹配 API 搜索结果中的歌曲 ID
+
+## 许可
+
+无许可证，您只被允许使用本项目。未经许可，不得删除或更改本软件的所有版权（以及链接等）。本项目所有权利归 @liu_bili (liubiliGrass/liu_bili_Grass) 所有
