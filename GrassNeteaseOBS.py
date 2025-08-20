@@ -66,7 +66,7 @@ subtitle_offset_ms = 0  # 字幕偏移时间（毫秒），正值为延后，负
 
 progress_format = "mm:ss"  # 支持 mm:ss 或 percent
 
-debug = True  # 是否启用调试日志
+debug = False  # 是否启用调试日志
 # ===================== 内部变量 ========================
 last_song = ""
 song_id_cache = None
@@ -344,6 +344,7 @@ def script_properties():
     obs.obs_properties_add_bool(props, "enable_translation", "启用翻译歌词")
     obs.obs_properties_add_bool(props, "enable_progress", "启用进度")
     obs.obs_properties_add_bool(props, "enable_cover", "启用封面")
+    obs.obs_properties_add_bool(props, "debug", "启用debug")
     obs.obs_properties_add_text(props, "progress_format", "进度格式", obs.OBS_TEXT_DEFAULT)
     obs.obs_properties_add_int(props, "refresh_interval", "刷新间隔(ms)", 200, 10000, 100)
     obs.obs_properties_add_int(props, "subtitle_offset_ms", "字幕时间偏移(ms)", -5000, 5000, 100)
@@ -352,7 +353,7 @@ def script_properties():
 def script_update(settings):
     global song_title_path, progress_path, lyric_path, cover_path
     global enable_lyrics, enable_translation, enable_progress, enable_cover
-    global refresh_interval, progress_format , subtitle_offset_ms
+    global refresh_interval, progress_format , subtitle_offset_ms , debug
 
     song_title_path = obs.obs_data_get_string(settings, "song_title_path")
     progress_path = obs.obs_data_get_string(settings, "progress_path")
@@ -362,6 +363,7 @@ def script_update(settings):
     enable_translation = obs.obs_data_get_bool(settings, "enable_translation")
     enable_progress = obs.obs_data_get_bool(settings, "enable_progress")
     enable_cover = obs.obs_data_get_bool(settings, "enable_cover")
+    debug = obs.obs_data_get_bool(settings, "debug")
     refresh_interval = obs.obs_data_get_int(settings, "refresh_interval")
     progress_format = obs.obs_data_get_string(settings, "progress_format")
     subtitle_offset_ms = obs.obs_data_get_int(settings, "subtitle_offset_ms")
