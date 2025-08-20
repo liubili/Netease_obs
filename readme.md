@@ -23,6 +23,7 @@
 <img width="1784" height="823" alt="1752908527-351335-image" src="https://github.com/user-attachments/assets/c2a8eb1c-d8a6-4f5b-972a-b12ac350c201" />
 
 
+
 ## 版本偏移链适配
 
 > 3.1.14 64位 版本未知`[0x01C6D230, 0xB8]`
@@ -32,6 +33,8 @@
 > 3.1.15 64位 Build:204255 Patch:6842b9d `[0x01C713B0, 0xB8]`
 >
 > 3.1.16 64位 Build:204365 Patch:1a85061 `[0x01C6EBD0,0xB8]`
+>
+> 3.1.17 64位 Build:204416 Patch:0b7c7b7 `[0x01C9F1B0,0xB8]`
 
 ## ⚙️ 配置项说明
 
