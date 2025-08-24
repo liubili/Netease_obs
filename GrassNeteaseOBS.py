@@ -66,6 +66,7 @@ subtitle_offset_ms = 0  # 字幕偏移时间（毫秒），正值为延后，负
 
 progress_format = "mm:ss"  # 支持 mm:ss 或 percent
 
+debug = False  # 是否启用调试日志
 # ===================== 内部变量 ========================
 last_song = ""
 song_id_cache = None
@@ -84,7 +85,8 @@ PROCESS_NAME = "cloudmusic.exe"
 MODULE_NAME = "cloudmusic.dll"
 #OFFSET_CHAIN = [0x01C6D230, 0xB8] 
 #OFFSET_CHAIN = [0x01C713B0, 0xB8]  # 根据实际情况调整偏移链
-OFFSET_CHAIN = [0x01C713B0,0xB8] # 根据实际情况调整偏移链
+#OFFSET_CHAIN = [0x01C6EBD0,0xB8] # 3.1.16 204365 1a885061
+OFFSET_CHAIN = [0x01C9F1B0,0xB8]
 try:
     pm = Pymem(PROCESS_NAME)
     mod = module_from_name(pm.process_handle, MODULE_NAME)
@@ -133,28 +135,27 @@ def search_song(song_name, artist):
         's': song_name,
         'type': 1,
         'limit': 10,
-        # 保留五个
         'offset': 0
     }
     headers = {'User-Agent': 'Mozilla/5.0'}
     try:
         response = requests.post(url, data=params, headers=headers , timeout=2)
         results = response.json()['result']['songs']
-        obs.script_log(obs.LOG_INFO, f"搜索到 {len(results)} 首歌曲")
+        script_log(obs.LOG_INFO, f"搜索到 {len(results)} 首歌曲")
         # obs.script_log(obs.LOG_INFO, f"完整 JSON 数据:\n{json.dumps(response.json(), ensure_ascii=False, indent=2)}")
-        obs.script_log(obs.LOG_WARNING, f"[匹配提示] 歌曲名: {song_name}, 歌手: {artist}")
+        script_log(obs.LOG_WARNING, f"[匹配提示] 歌曲名: {song_name}, 歌手: {artist}")
         for song in results:
         # 只要候选歌手列表里任意一位匹配即可
             if any(a['name'] in artist_list or any(sub in a['name'] for sub in artist_list)
                for a in song['artists']):
                 song_id_cache = song['id']
                 
-                obs.script_log(obs.LOG_INFO, f"找到匹配的歌曲: {song['name']} - {song['artists'][0]['name']}")
+                script_log(obs.LOG_INFO, f"找到匹配的歌曲: {song['name']} - {song['artists'][0]['name']}")
                 return song_id_cache
         song_id_cache = results[0]['id']
         
 
-        obs.script_log(obs.LOG_WARNING, f"[匹配提示] 未找到完全匹配的歌手，使用默认：{results[0]['name']}")
+        script_log(obs.LOG_WARNING, f"[匹配提示] 未找到完全匹配的歌手，使用默认：{results[0]['name']}")
         return song_id_cache
     except Exception as e:
         obs.script_log(obs.LOG_ERROR, f"搜索歌曲失败: {e}")
@@ -198,6 +199,8 @@ def merge_lyrics(main, trans):
         if time in trans:
             merged[time] += " / " + trans[time]
     return merged
+
+#待办:单独摘出来
 
 def resolve_pointer_chain(pm, base, offsets):
     """解析多级偏移链，返回最终地址"""
@@ -341,6 +344,7 @@ def script_properties():
     obs.obs_properties_add_bool(props, "enable_translation", "启用翻译歌词")
     obs.obs_properties_add_bool(props, "enable_progress", "启用进度")
     obs.obs_properties_add_bool(props, "enable_cover", "启用封面")
+    obs.obs_properties_add_bool(props, "debug", "启用debug")
     obs.obs_properties_add_text(props, "progress_format", "进度格式", obs.OBS_TEXT_DEFAULT)
     obs.obs_properties_add_int(props, "refresh_interval", "刷新间隔(ms)", 200, 10000, 100)
     obs.obs_properties_add_int(props, "subtitle_offset_ms", "字幕时间偏移(ms)", -5000, 5000, 100)
@@ -349,7 +353,7 @@ def script_properties():
 def script_update(settings):
     global song_title_path, progress_path, lyric_path, cover_path
     global enable_lyrics, enable_translation, enable_progress, enable_cover
-    global refresh_interval, progress_format , subtitle_offset_ms
+    global refresh_interval, progress_format , subtitle_offset_ms , debug
 
     song_title_path = obs.obs_data_get_string(settings, "song_title_path")
     progress_path = obs.obs_data_get_string(settings, "progress_path")
@@ -359,6 +363,7 @@ def script_update(settings):
     enable_translation = obs.obs_data_get_bool(settings, "enable_translation")
     enable_progress = obs.obs_data_get_bool(settings, "enable_progress")
     enable_cover = obs.obs_data_get_bool(settings, "enable_cover")
+    debug = obs.obs_data_get_bool(settings, "debug")
     refresh_interval = obs.obs_data_get_int(settings, "refresh_interval")
     progress_format = obs.obs_data_get_string(settings, "progress_format")
     subtitle_offset_ms = obs.obs_data_get_int(settings, "subtitle_offset_ms")
@@ -391,3 +396,10 @@ def _background_fetch(song, artist):
     if enable_cover:
         cover_downloaded = False
         download_cover()
+
+def script_log(level, message):
+    """
+    记录脚本日志
+    """
+    if debug:
+        obs.script_log(level, message)
