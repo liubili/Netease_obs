@@ -3,6 +3,7 @@
 > 作者: liubiliGrass  
 > 功能：实时读取网易云音乐当前播放歌曲信息并在 OBS 中显示歌词、进度、封面等信息
 
+
 ## 功能简介
 
 - 🎵 实时获取网易云音乐播放歌曲名与歌手
@@ -35,6 +36,8 @@
 > 3.1.16 64位 Build:204365 Patch:1a85061 `[0x01C6EBD0,0xB8]`
 >
 > 3.1.17 64位 Build:204416 Patch:0b7c7b7 `[0x01C9F1B0,0xB8]`
+>
+> 3.1.18 64位 Build:204470 Patch:92b0833 `[0x01CA1190,0xB8]`
 
 ## ⚙️ 配置项说明
 
@@ -74,6 +77,15 @@ pip install pymem psutil requests pywin32
 
 自动比对匹配 API 搜索结果中的歌曲 ID
 
+### 第三方包及其许可证
+- psutil (BSD License)
+- requests (Apache 2.0)
+- pymem (MIT License)
+- pywin32 (MIT License)
 ## 许可
 
-无许可证，您只被允许使用本项目。未经许可，不得删除或更改本软件的所有版权（以及链接等）。本项目所有权利归 @liu_bili (liubiliGrass/liu_bili_Grass) 所有
+无许可证。未经许可，不得商用。本项目所有权利归 @liu_bili (liubiliGrass/liu_bili_Grass) 所有,保留所有权利。
+
+## 关于许可
+
+Py脚本可以随便修改，保留所有权利是为了防止被抹名/修改然后付费二次分发，比如咸鱼/pdd卖脚本这种行为，不会对个人用户/非商用进行任何追责

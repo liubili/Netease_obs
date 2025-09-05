@@ -86,7 +86,8 @@ MODULE_NAME = "cloudmusic.dll"
 #OFFSET_CHAIN = [0x01C6D230, 0xB8] 
 #OFFSET_CHAIN = [0x01C713B0, 0xB8]  # 根据实际情况调整偏移链
 #OFFSET_CHAIN = [0x01C6EBD0,0xB8] # 3.1.16 204365 1a885061
-OFFSET_CHAIN = [0x01C9F1B0,0xB8]
+#OFFSET_CHAIN = [0x01C9F1B0,0xB8]
+OFFSET_CHAIN = [0x01CA1190,0xB8] # 3.1.18 204470 92b0833
 try:
     pm = Pymem(PROCESS_NAME)
     mod = module_from_name(pm.process_handle, MODULE_NAME)
@@ -134,7 +135,7 @@ def search_song(song_name, artist):
     params = {
         's': song_name,
         'type': 1,
-        'limit': 10,
+        'limit': 20,
         'offset': 0
     }
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -310,7 +311,7 @@ def update():
         executor.submit(_background_fetch, song, artist)
 
     if enable_lyrics and lyric_data:
-        now = progress_cache + subtitle_offset_ms
+        now = progress_cache - subtitle_offset_ms
         # 应用字幕偏移量
 
         # obs.script_log(obs.LOG_INFO, f"当前进度: {now} ms")
