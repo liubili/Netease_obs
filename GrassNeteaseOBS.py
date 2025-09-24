@@ -201,7 +201,7 @@ def merge_lyrics(main, trans):
             merged[time] += " / " + trans[time]
     return merged
 
-#待办:单独摘出来
+#待办:单独摘出来 已经完成
 
 def resolve_pointer_chain(pm, base, offsets):
     """解析多级偏移链，返回最终地址"""
@@ -240,8 +240,8 @@ def get_progress():
         val = struct.unpack("<Q", data)[0]
         # print(f"[+] 最终值 = 0x{val:X} ({val})")
         # val += subtitle_offset_ms  # 应用字幕偏移
-        # obs.script_log(obs.LOG_INFO, f"当前偏移:{subtitle_offset_ms}")
-        # obs.script_log(obs.LOG_INFO, f"进度接口返回: {val} ms")
+        obs.script_log(obs.LOG_INFO, f"当前偏移:{subtitle_offset_ms}")
+        obs.script_log(obs.LOG_INFO, f"进度接口返回: {val} ms")
         return val
     except:
         pass
