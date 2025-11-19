@@ -1,5 +1,8 @@
 # 网易云音乐 OBS 插件脚本
 
+
+# 已停更 有需求用户移步C#版本[页面](https://bbs.liubiligrass.com/d/20-grassnetease10fa-bu-ye)
+
 > 作者: liubiliGrass  
 > 功能：实时读取网易云音乐当前播放歌曲信息并在 OBS 中显示歌词、进度、封面等信息
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/liubili/Netease_obs)
